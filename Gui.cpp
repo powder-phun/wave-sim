@@ -40,7 +40,7 @@ void Gui::refresh(Sim& sim)
         }
     }
     offset++;
-    printf("%i %f\n", offset, max_amplitude);
+    //printf("%i %f\n", offset, max_amplitude);
 
     SDL_RenderPresent(renderer);
     SDL_UpdateWindowSurface(window);
@@ -81,7 +81,7 @@ Uint8 Gui::r(double a)
 {
     if(a < 0.0)
     {
-        return -250.0*a/max_amplitude;
+        return -a/max_amplitude*250;
     }
     else
     {
@@ -93,7 +93,7 @@ Uint8 Gui::g(double a)
 {
     if(a > 0.0)
     {
-        return 250.0*a/max_amplitude;
+        return a/max_amplitude*250;
     }
     else
     {

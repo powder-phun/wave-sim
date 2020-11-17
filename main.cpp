@@ -18,7 +18,7 @@ int main()
         printf("Init complete\n");
         while(gui.running())
         {
-            //for(int i = 0; i < 10; i++)
+            for(int i = 0; i < 10; i++)
                 sim.tick();
             gui.refresh(sim);
         }

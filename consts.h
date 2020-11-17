@@ -5,10 +5,10 @@
 #ifndef WAVE_SIM_CONSTS_H
 #define WAVE_SIM_CONSTS_H
 
-#define RES_X 400
-#define RES_Y 400
+#define RES_X 600
+#define RES_Y 500
 #define SCALE_FACTOR 1
-//30fps
+
 
 
 #endif //WAVE_SIM_CONSTS_H
