@@ -21,6 +21,7 @@ class Gui
     Uint8 g(double a);
     Uint8 b(double a);
     double max_amplitude;
+
 public:
     Gui();
     bool init();

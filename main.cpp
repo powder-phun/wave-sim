@@ -9,8 +9,11 @@ and may not be redistributed without written permission.*/
 
 int main()
 {
-    static Sim sim;
-    static Gui gui;
+    Sim sim = Sim();
+    Gui gui = Gui();
+    Rect_object klocek(300, 170+30, 303, RES_Y, 0);
+
+    sim.add_object(&klocek);
 
 
     if(true)
@@ -18,7 +21,7 @@ int main()
         printf("Init complete\n");
         while(gui.running())
         {
-            for(int i = 0; i < 10; i++)
+            for(int i = 0; i < 25; i++)
                 sim.tick();
             gui.refresh(sim);
         }

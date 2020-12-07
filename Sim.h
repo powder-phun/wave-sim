@@ -8,12 +8,31 @@
 #include <math.h>
 #include <stdio.h>
 #include <algorithm>
+#include <time.h>
+#include <vector>
 
 #define LAP_RADIUS 3
 #define DAMP_BORDER 50
 #define BORDER 3
 #define walls
 #define RASTER 1.0
+
+class Object
+{
+
+public:
+    virtual void impose(double (&local_c)[RES_X][RES_Y]);
+    //virtual double display() = 0;
+};
+
+class Rect_object : public Object
+{
+    int x0, y0, x1, y1;
+    double object_c;
+public:
+    Rect_object(int x0, int y0, int x1, int y1, double object_c);
+    void impose(double (&local_c)[RES_X][RES_Y]) override;
+};
 
 class Sim
 {
@@ -38,6 +57,9 @@ class Sim
     double force_amplitude[RES_X][RES_Y];
     double force_phase[RES_X][RES_Y];
     double local_c[RES_X][RES_Y];
+    double laplacian_sum;
+    clock_t system_begin_time;
+    std::vector <Object*> objects;
 
 public:
     Sim();
@@ -45,6 +67,7 @@ public:
     double get_energy(int x, int y);
     void tick();
     double get_max_amplitude();
+    double add_object(Object* object);
 };
 
 

@@ -8,7 +8,6 @@
 Sim::Sim():
 c(0.1), t_step(1.0), max_amplitude(0), max0(0), max1(0)
 {
-
     for(int x = 0; x < RES_X; x++)
     {
         for(int y = 0; y < RES_Y; y++)
@@ -29,35 +28,20 @@ c(0.1), t_step(1.0), max_amplitude(0), max0(0), max1(0)
         for(int x = 140; x <= 170; x++)
         {
             force_omega[x][y] = lambda_to_omega(40);
-            force_amplitude[x][y] = 1.0;
-            force_phase[x][y] = (80.0-x)/40.0*2.0*M_PI;
+            force_amplitude[x][y] = 100.0;
+            //force_phase[x][y] = (80.0-x)/40.0*2.0*M_PI;
         }
     }
 
-    for(int y = 0; y<= RES_Y; y++)
+    objects.push_back(new Rect_object(300, 130, 303, 170, 0));
+    objects.push_back(new Rect_object(300, 0, 303, 130-30, 0));
+
+    for(int i = 0; i < objects.size(); i++)
     {
-        for(int x = 300; x <= 303; x++)
-        {
-            local_c[x][y] = 0;
-        }
+        //objects[i]->impose(local_c);
     }
 
-    for(int y = 170; y<= 170+30; y++)
-    {
-        for(int x = 300; x <= 303; x++)
-        {
-            local_c[x][y] = c;
-        }
-    }
-
-    for(int y = 130-30; y<= 130; y++)
-    {
-        for(int x = 300; x <= 303; x++)
-        {
-            local_c[x][y] = c;
-        }
-    }
-
+    const clock_t begin_time = clock();
 }
 
 double Sim::get_amplitude(int x, int y)
@@ -147,19 +131,71 @@ void Sim::tick()
         }
     }
     #endif
-
-    printf("%i\n", count);
+    if(count%100 == 0)
+        printf("%i, %f, %f\n",
+               count,
+               float( clock () - system_begin_time ) /  CLOCKS_PER_SEC,
+               count / (float( clock () - system_begin_time ) /  CLOCKS_PER_SEC));
 
     count++;
 
     t+= t_step;
 }
 
+#define classic
+
 void Sim::laplace_avg()
 {
-    for(int x0 = LAP_RADIUS; x0 < RES_X - LAP_RADIUS; x0++)
+    for(int y0 = LAP_RADIUS; y0 < RES_Y - LAP_RADIUS; y0++)
     {
-        for(int y0 = LAP_RADIUS; y0 < RES_Y - LAP_RADIUS; y0++)
+        #ifdef window
+        laplacian_sum = 0.0;
+        double count = 0.0;
+
+        for(int x = 0; x <= LAP_RADIUS + LAP_RADIUS; x++)
+        {
+            for(int y = y0 - LAP_RADIUS; y <= y0 + LAP_RADIUS; y++)
+            {
+                if ((x - LAP_RADIUS) * (x - LAP_RADIUS) + (y - y0) * (y - y0) <= LAP_RADIUS * LAP_RADIUS && (x != LAP_RADIUS || y0 != y))
+                {
+                    count += 1.0;
+                    laplacian_sum += a0[x][y];
+                }
+            }
+        }
+
+        double laplacian = (laplacian_sum/count-a0[LAP_RADIUS][y0])*8/(RASTER*RASTER*LAP_RADIUS*LAP_RADIUS);
+        a2[LAP_RADIUS][y0] = laplacian * local_c[LAP_RADIUS][y0] * local_c[LAP_RADIUS][y0];
+        E[LAP_RADIUS][y0] = laplacian*laplacian*local_c[LAP_RADIUS][y0]*local_c[LAP_RADIUS][y0] + a1[LAP_RADIUS][y0]*a1[LAP_RADIUS][y0];
+
+
+        for(int x0 = LAP_RADIUS + 1; x0 < RES_Y - LAP_RADIUS; x0++)
+        {
+
+            laplacian_sum -= a0[x0-4][y0];
+            laplacian_sum -= a0[x0-3][y0-2];
+            laplacian_sum -= a0[x0-3][y0-1];
+            laplacian_sum -= a0[x0-3][y0+1];
+            laplacian_sum -= a0[x0-3][y0+2];
+            laplacian_sum -= a0[x0-1][y0-3];
+            laplacian_sum -= a0[x0-1][y0+3];
+
+            laplacian_sum += a0[x0+3][y0];
+            laplacian_sum += a0[x0+2][y0-2];
+            laplacian_sum += a0[x0+2][y0-1];
+            laplacian_sum += a0[x0+2][y0+1];
+            laplacian_sum += a0[x0+2][y0+2];
+            laplacian_sum += a0[x0][y0-3];
+            laplacian_sum += a0[x0][y0+3];
+
+            double laplacian = (laplacian_sum/28-a0[x0][y0])*8/(RASTER*RASTER*LAP_RADIUS*LAP_RADIUS);
+            a2[x0][y0] = laplacian * local_c[x0][y0] * local_c[x0][y0];
+            E[x0][y0] = laplacian*laplacian*local_c[x0][y0]*local_c[x0][y0] + a1[x0][y0]*a1[x0][y0];
+        }
+        #endif
+
+        #ifdef classic
+        for(int x0 = LAP_RADIUS; x0 < RES_X - LAP_RADIUS; x0++)
         {
             double sum = 0.0;
             double count = 0;
@@ -175,10 +211,12 @@ void Sim::laplace_avg()
                     }
                 }
             }
+
             double laplacian = (sum/count-a0[x0][y0])*8/(RASTER*RASTER*LAP_RADIUS*LAP_RADIUS);
             a2[x0][y0] = laplacian * local_c[x0][y0] * local_c[x0][y0];
             E[x0][y0] = laplacian*laplacian*local_c[x0][y0]*local_c[x0][y0] + a1[x0][y0]*a1[x0][y0];
         }
+        #endif
     }
 }
 
@@ -211,3 +249,34 @@ double Sim::border_distance(int x, int y)
 {
     return std::min(std::min(RES_X - x, x), std::min(RES_Y - y, y));
 }
+
+double Sim::add_object(Object* object)
+{
+    //objects.push_back(object);
+    //object->impose(local_c);
+}
+
+void Object::impose(double (&local_c)[RES_X][RES_Y])
+{
+
+}
+
+Rect_object::Rect_object(int x0, int y0, int x1, int y1, double object_c):
+x0(x0), y0(y0), x1(x1), y1(y1), object_c(object_c)
+{
+
+}
+
+void Rect_object::impose(double (&local_c)[RES_X][RES_Y])
+{
+    for(int x = x0; x <= x1; x++)
+    {
+        for(int y = y0; y <= y1; y++)
+        {
+            local_c[x][y] = object_c;
+        }
+    }
+}
+
+
+
