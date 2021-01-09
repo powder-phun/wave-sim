@@ -25,23 +25,27 @@ offset(0), running_status(false)
     }
 }
 
-void Gui::refresh(Sim& sim)
+void Gui::refresh(Sim* sim)
 {
-    max_amplitude = sim.get_max_amplitude();
+    max_amplitude = sim->get_max_amplitude();
 
     for (int x = 0; x < RES_X * SCALE_FACTOR; x++)
     {
         for (int y = 0; y < RES_Y * SCALE_FACTOR; y++)
         {
-            SDL_SetRenderDrawColor(renderer, r(sim.get_amplitude(x / SCALE_FACTOR, y / SCALE_FACTOR)),
-                                   g(sim.get_amplitude(x / SCALE_FACTOR, y / SCALE_FACTOR)),
-                                   b(sim.get_amplitude(x / SCALE_FACTOR, y / SCALE_FACTOR)), SDL_ALPHA_OPAQUE);
+            SDL_SetRenderDrawColor(renderer, r(sim->get_amplitude(x / SCALE_FACTOR, y / SCALE_FACTOR)),
+                                   g(sim->get_amplitude(x / SCALE_FACTOR, y / SCALE_FACTOR)),
+                                   b(sim->get_amplitude(x / SCALE_FACTOR, y / SCALE_FACTOR)), SDL_ALPHA_OPAQUE);
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
     offset++;
     //printf("%i %f\n", offset, max_amplitude);
-
+    std::vector <Object*> objects = sim->get_objects();
+    for(int i = 0; i < objects.size(); i++)
+    {
+        objects[i]->display(renderer);
+    }
     SDL_RenderPresent(renderer);
     SDL_UpdateWindowSurface(window);
     //SDL_Delay(1000);

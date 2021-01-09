@@ -25,7 +25,7 @@ class Gui
 public:
     Gui();
     bool init();
-    void refresh(Sim& sim);
+    void refresh(Sim* sim);
     void quit();
     bool running();
 

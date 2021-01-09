@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <time.h>
 #include <vector>
+#include <SDL2/SDL.h>
 
 #define LAP_RADIUS 3
 #define DAMP_BORDER 50
@@ -19,19 +20,48 @@
 
 class Object
 {
-
+protected:
+    double object_c;
+    double object_force_amplitude;
+    double object_force_omega;
+    double object_force_phase;
+    bool visible, filled;
+    int color_r, color_g, color_b;
 public:
-    virtual void impose(double (&local_c)[RES_X][RES_Y]);
-    //virtual double display() = 0;
+    Object(double object_c, double object_force_amplitude, double object_force_omega, double object_force_phase);
+    virtual void impose(double (&local_c)[RES_X][RES_Y],
+                        double (&force_amplitude)[RES_X][RES_Y],
+                        double (&force_omega)[RES_X][RES_Y],
+                        double (&force_phase)[RES_X][RES_Y]) = 0;
+    virtual void display(SDL_Renderer* renderer) = 0;
+    void set_visible(bool is_visible);
+    void set_color(int r, int g, int b);
 };
 
 class Rect_object : public Object
 {
     int x0, y0, x1, y1;
-    double object_c;
 public:
-    Rect_object(int x0, int y0, int x1, int y1, double object_c);
-    void impose(double (&local_c)[RES_X][RES_Y]) override;
+    Rect_object(int x0, int y0, int x1, int y1, double object_c,
+                double object_force_amplitude, double object_force_omega, double object_force_phase);
+    virtual void impose(double (&local_c)[RES_X][RES_Y],
+                        double (&force_amplitude)[RES_X][RES_Y],
+                        double (&force_omega)[RES_X][RES_Y],
+                        double (&force_phase)[RES_X][RES_Y]) override;
+    virtual void display(SDL_Renderer* renderer) override;
+};
+
+class Circle_object : public Object
+{
+    int x0, y0, r;
+public:
+    Circle_object(int x0, int y0, int r, double object_c,
+                  double object_force_amplitude, double object_force_omega, double object_force_phase);
+    void impose(double (&local_c)[RES_X][RES_Y],
+                        double (&force_amplitude)[RES_X][RES_Y],
+                        double (&force_omega)[RES_X][RES_Y],
+                        double (&force_phase)[RES_X][RES_Y]) override;
+    virtual void display(SDL_Renderer* renderer) override;
 };
 
 class Sim
@@ -40,26 +70,25 @@ class Sim
     double a1[RES_X][RES_Y];
     double a2[RES_X][RES_Y];
     double E[RES_X][RES_Y];
-    double t;
-    const double c;
-    const double t_step;
-    void laplace_avg();
-    double max_amplitude;
-    double max_energy;
-    double f_to_lambda(double f);
-    double f_to_omega(double f);
-    double lambda_to_f(double lambda);
-    double lambda_to_omega(double lambda);
-    double border_distance(int x, int y);
-    double max0, max1;
-    int count;
+
     double force_omega[RES_X][RES_Y];
     double force_amplitude[RES_X][RES_Y];
     double force_phase[RES_X][RES_Y];
     double local_c[RES_X][RES_Y];
+
+    double t;
+    const double c;
+    const double t_step;
+    double max_amplitude;
+    double max_energy;
+    double max0, max1;
+    int count;
     double laplacian_sum;
     clock_t system_begin_time;
-    std::vector <Object*> objects;
+    std::vector <Object*> objects = std::vector<Object*>();
+
+    void laplace_avg();
+    double border_distance(int x, int y);
 
 public:
     Sim();
@@ -67,7 +96,12 @@ public:
     double get_energy(int x, int y);
     void tick();
     double get_max_amplitude();
-    double add_object(Object* object);
+    void add_object(Object* object);
+    std::vector <Object*> get_objects();
+    double f_to_lambda(double f);
+    double f_to_omega(double f);
+    double lambda_to_f(double lambda);
+    double lambda_to_omega(double lambda);
 };
 
 

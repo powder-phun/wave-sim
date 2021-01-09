@@ -23,23 +23,6 @@ c(0.1), t_step(1.0), max_amplitude(0), max0(0), max1(0)
 
         }
     }
-    for(int y = 145; y<= 155; y++)
-    {
-        for(int x = 140; x <= 170; x++)
-        {
-            force_omega[x][y] = lambda_to_omega(40);
-            force_amplitude[x][y] = 100.0;
-            //force_phase[x][y] = (80.0-x)/40.0*2.0*M_PI;
-        }
-    }
-
-    objects.push_back(new Rect_object(300, 130, 303, 170, 0));
-    objects.push_back(new Rect_object(300, 0, 303, 130-30, 0));
-
-    for(int i = 0; i < objects.size(); i++)
-    {
-        //objects[i]->impose(local_c);
-    }
 
     const clock_t begin_time = clock();
 }
@@ -250,33 +233,146 @@ double Sim::border_distance(int x, int y)
     return std::min(std::min(RES_X - x, x), std::min(RES_Y - y, y));
 }
 
-double Sim::add_object(Object* object)
+void Sim::add_object(Object* object)
 {
-    //objects.push_back(object);
-    //object->impose(local_c);
+    objects.push_back(object);
+    object->impose(local_c, force_amplitude, force_omega, force_phase);
 }
 
-void Object::impose(double (&local_c)[RES_X][RES_Y])
+std::vector<Object *> Sim::get_objects()
+{
+    return objects;
+}
+
+Object::Object(double object_c, double object_force_amplitude, double object_force_omega, double object_force_phase):
+object_c(object_c), object_force_amplitude(object_force_amplitude),
+object_force_omega(object_force_omega), object_force_phase(object_force_phase),
+visible(true), filled(true), color_r(255), color_g(255), color_b(255)
+{
+    if(object_c != 0.0)
+    {
+        filled = false;
+    }
+    //by default objects transparent to waves are not filled
+}
+
+void Object::set_visible(bool is_visible)
+{
+    visible = is_visible;
+}
+
+void Object::set_color(int r, int g, int b)
+{
+    color_r = r;
+    color_g = g;
+    color_b = b;
+}
+
+Rect_object::Rect_object(int x0, int y0, int x1, int y1, double object_c,
+                         double object_force_amplitude, double object_force_omega, double object_force_phase):
+x0(x0), y0(y0), x1(x1), y1(y1), Object(object_c, object_force_amplitude, object_force_omega, object_force_phase)
 {
 
 }
 
-Rect_object::Rect_object(int x0, int y0, int x1, int y1, double object_c):
-x0(x0), y0(y0), x1(x1), y1(y1), object_c(object_c)
-{
-
-}
-
-void Rect_object::impose(double (&local_c)[RES_X][RES_Y])
+void Rect_object::impose(double (&local_c)[RES_X][RES_Y],
+                           double (&force_amplitude)[RES_X][RES_Y],
+                           double (&force_omega)[RES_X][RES_Y],
+                           double (&force_phase)[RES_X][RES_Y])
 {
     for(int x = x0; x <= x1; x++)
     {
         for(int y = y0; y <= y1; y++)
         {
             local_c[x][y] = object_c;
+            force_amplitude[x][y] = object_force_amplitude;
+            force_omega[x][y] = object_force_omega;
+            force_phase[x][y] = object_force_phase;
         }
     }
 }
 
+void Rect_object::display(SDL_Renderer *renderer)
+{
+    if(visible)
+    {
+        SDL_SetRenderDrawColor(renderer, color_r,color_g,color_b, SDL_ALPHA_OPAQUE);
+        if(filled)
+        {
+            for(int x = x0; x <= x1; x++)
+            {
+                for(int y = y0; y <= y1; y++)
+                {
+                    SDL_RenderDrawPoint(renderer, x, y);
+                }
+            }
+        }
+        else
+        {
+            for(int x = x0; x <= x1; x++)
+            {
+                SDL_RenderDrawPoint(renderer, x, y0);
+                SDL_RenderDrawPoint(renderer, x, y1);
+            }
 
+            for(int y = y0; y <= y1; y++)
+            {
+                SDL_RenderDrawPoint(renderer, x0, y);
+                SDL_RenderDrawPoint(renderer, x1, y);
+            }
+        }
+    }
+}
+
+Circle_object::Circle_object(int x0, int y0, int r, double object_c,
+                             double object_force_amplitude, double object_force_omega, double object_force_phase):
+x0(x0), y0(y0), r(r), Object(object_c, object_force_amplitude, object_force_omega, object_force_phase)
+{
+
+}
+
+void Circle_object::impose(double (&local_c)[RES_X][RES_Y],
+            double (&force_amplitude)[RES_X][RES_Y],
+            double (&force_omega)[RES_X][RES_Y],
+            double (&force_phase)[RES_X][RES_Y])
+{
+    for(int x = std::max(x0 - r, 0); x <= std::min(x0 + r, RES_X); x++)
+    {
+        for(int y = std::max(y0 - r, 0); y <= std::min(y0 + r, RES_Y); y++)
+        {
+            if((x0 - x) * (x0 - x) + (y0 - y) * (y0 - y) <= r * r)
+            {
+                local_c[x][y] = object_c;
+                force_amplitude[x][y] = object_force_amplitude;
+                force_omega[x][y] = object_force_omega;
+                force_phase[x][y] = object_force_phase;
+            }
+        }
+    }
+}
+
+void Circle_object::display(SDL_Renderer *renderer)
+{
+    if(visible)
+    {
+        SDL_SetRenderDrawColor(renderer, color_r,color_g,color_b, SDL_ALPHA_OPAQUE);
+        if(filled)
+        {
+            for(int x = std::max(x0 - r, 0); x <= std::min(x0 + r, RES_X); x++)
+            {
+                for(int y = std::max(y0 - r, 0); y <= std::min(y0 + r, RES_Y); y++)
+                {
+                    if((x0 - x) * (x0 - x) + (y0 - y) * (y0 - y) <= r * r)
+                    {
+                        SDL_RenderDrawPoint(renderer, x, y);
+                    }
+                }
+            }
+        }
+        else
+        {
+            //implement this
+        }
+    }
+}
 
