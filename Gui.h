@@ -17,20 +17,24 @@ class Gui
     SDL_Window* window;
     SDL_Renderer* renderer;
     bool running_status;
+    double max_amplitude;
+
     Uint8 r(double a);
     Uint8 g(double a);
     Uint8 b(double a);
-    double max_amplitude;
+
+    //drawing:
+    int new_x[3], new_y[3];
+    int current_point_chosen;
+    char shape_placed; //r - rectangle, c - circle
+    char placement_mode; //b - block, s - source, d - delete
+
 
 public:
     Gui();
-    bool init();
     void refresh(Sim* sim);
     void quit();
     bool running();
-
-
-
 };
 
 

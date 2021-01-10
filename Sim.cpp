@@ -8,6 +8,12 @@
 Sim::Sim():
 c(0.1), t_step(1.0), max_amplitude(0), max0(0), max1(0)
 {
+    reset_arrays();
+    const clock_t begin_time = clock();
+}
+
+void Sim::reset_arrays()
+{
     for(int x = 0; x < RES_X; x++)
     {
         for(int y = 0; y < RES_Y; y++)
@@ -20,11 +26,13 @@ c(0.1), t_step(1.0), max_amplitude(0), max0(0), max1(0)
             force_omega[x][y] = 0;
             force_amplitude[x][y] = 0;
             force_phase[x][y] = 0;
-
         }
     }
 
-    const clock_t begin_time = clock();
+    for(auto & object : objects)
+    {
+        object->impose(local_c, force_amplitude, force_omega, force_phase);
+    }
 }
 
 double Sim::get_amplitude(int x, int y)
@@ -66,6 +74,11 @@ void Sim::tick()
         for (int y = BORDER; y < RES_Y - BORDER; y++)
         {
             a0[x][y] += t_step * a1[x][y];
+
+            if(local_c[x][y] == 0.0)
+            {
+                a0[x][y] = 0.0;
+            }
 
             if(a0[x][y] * a0[x][y] + a1[x][y] * a1[x][y] * 277.8 > max_energy)
             {
@@ -115,10 +128,10 @@ void Sim::tick()
     }
     #endif
     if(count%100 == 0)
-        printf("%i, %f, %f\n",
-               count,
-               float( clock () - system_begin_time ) /  CLOCKS_PER_SEC,
-               count / (float( clock () - system_begin_time ) /  CLOCKS_PER_SEC));
+        //printf("%i, %f, %f\n",
+        //       count,
+        //       float( clock () - system_begin_time ) /  CLOCKS_PER_SEC,
+        //       count / (float( clock () - system_begin_time ) /  CLOCKS_PER_SEC));
 
     count++;
 
@@ -244,6 +257,33 @@ std::vector<Object *> Sim::get_objects()
     return objects;
 }
 
+void Sim::remove_object_at(int x, int y)
+{
+    for(int x = 0; x < RES_X; x++)
+    {
+        for(int y = 0; y < RES_Y; y++)
+        {
+            local_c[x][y] = c;
+            force_omega[x][y] = 0;
+            force_amplitude[x][y] = 0;
+            force_phase[x][y] = 0;
+        }
+    }
+
+    for(int i = 0; i < objects.size(); i++)
+    {
+        if(objects[i]->overlaps(x, y))
+        {
+            delete(objects[i]);
+            objects.erase(objects.begin() + i);
+        }
+        else
+        {
+            objects[i]->impose(local_c, force_amplitude, force_omega, force_phase);
+        }
+    }
+}
+
 Object::Object(double object_c, double object_force_amplitude, double object_force_omega, double object_force_phase):
 object_c(object_c), object_force_amplitude(object_force_amplitude),
 object_force_omega(object_force_omega), object_force_phase(object_force_phase),
@@ -324,6 +364,10 @@ void Rect_object::display(SDL_Renderer *renderer)
     }
 }
 
+bool Rect_object::overlaps(int x, int y) {
+    return x>=x0 && x<=x1 && y>=y0 && y<=y1;
+}
+
 Circle_object::Circle_object(int x0, int y0, int r, double object_c,
                              double object_force_amplitude, double object_force_omega, double object_force_phase):
 x0(x0), y0(y0), r(r), Object(object_c, object_force_amplitude, object_force_omega, object_force_phase)
@@ -355,7 +399,7 @@ void Circle_object::display(SDL_Renderer *renderer)
 {
     if(visible)
     {
-        SDL_SetRenderDrawColor(renderer, color_r,color_g,color_b, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, color_r, color_g, color_b, SDL_ALPHA_OPAQUE);
         if(filled)
         {
             for(int x = std::max(x0 - r, 0); x <= std::min(x0 + r, RES_X); x++)
@@ -371,8 +415,33 @@ void Circle_object::display(SDL_Renderer *renderer)
         }
         else
         {
-            //implement this
+            int x = 0;
+            int y = r;
+            while(x < y)
+            {
+                x++;
+                if(x*x+y*y-r*r > r*r-(x*x+(y-1)*(y-1)))
+                {
+                    y--;
+                }
+                SDL_RenderDrawPoint(renderer, x0+x, y0+y);
+                SDL_RenderDrawPoint(renderer, x0-x, y0+y);
+                SDL_RenderDrawPoint(renderer, x0+x, y0-y);
+                SDL_RenderDrawPoint(renderer, x0-x, y0-y);
+                SDL_RenderDrawPoint(renderer, x0+y, y0+x);
+                SDL_RenderDrawPoint(renderer, x0-y, y0+x);
+                SDL_RenderDrawPoint(renderer, x0+y, y0-x);
+                SDL_RenderDrawPoint(renderer, x0-y, y0-x);
+            }
+            SDL_RenderDrawPoint(renderer, x0-r, y0);
+            SDL_RenderDrawPoint(renderer, x0, y0-r);
+            SDL_RenderDrawPoint(renderer, x0+r, y0);
+            SDL_RenderDrawPoint(renderer, x0, y0+r);
         }
     }
+}
+
+bool Circle_object::overlaps(int x, int y) {
+    return (r*r) >= ((x-x0)*(x-x0)+(y-y0)*(y-y0));
 }
 

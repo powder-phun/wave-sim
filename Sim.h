@@ -36,6 +36,7 @@ public:
     virtual void display(SDL_Renderer* renderer) = 0;
     void set_visible(bool is_visible);
     void set_color(int r, int g, int b);
+    virtual bool overlaps(int x, int y) = 0;
 };
 
 class Rect_object : public Object
@@ -44,11 +45,12 @@ class Rect_object : public Object
 public:
     Rect_object(int x0, int y0, int x1, int y1, double object_c,
                 double object_force_amplitude, double object_force_omega, double object_force_phase);
-    virtual void impose(double (&local_c)[RES_X][RES_Y],
+    void impose(double (&local_c)[RES_X][RES_Y],
                         double (&force_amplitude)[RES_X][RES_Y],
                         double (&force_omega)[RES_X][RES_Y],
                         double (&force_phase)[RES_X][RES_Y]) override;
-    virtual void display(SDL_Renderer* renderer) override;
+    void display(SDL_Renderer* renderer) override;
+    bool overlaps(int x, int y) override;
 };
 
 class Circle_object : public Object
@@ -62,6 +64,7 @@ public:
                         double (&force_omega)[RES_X][RES_Y],
                         double (&force_phase)[RES_X][RES_Y]) override;
     virtual void display(SDL_Renderer* renderer) override;
+    bool overlaps(int x, int y) override;
 };
 
 class Sim
@@ -89,9 +92,9 @@ class Sim
 
     void laplace_avg();
     double border_distance(int x, int y);
-
 public:
     Sim();
+    void reset_arrays();
     double get_amplitude(int x, int y);
     double get_energy(int x, int y);
     void tick();
@@ -102,6 +105,8 @@ public:
     double f_to_omega(double f);
     double lambda_to_f(double lambda);
     double lambda_to_omega(double lambda);
+    void remove_object_at(int x, int y);
+
 };
 
 

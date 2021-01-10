@@ -6,7 +6,7 @@
 #define WAVE_SIM_CONSTS_H
 
 #define RES_X 600
-#define RES_Y 400
+#define RES_Y 300
 #define SCALE_FACTOR 1
 
 
