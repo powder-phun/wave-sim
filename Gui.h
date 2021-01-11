@@ -25,9 +25,9 @@ class Gui
 
     //drawing:
     int new_x[3], new_y[3];
-    int current_point_chosen;
+    int current_point_chosen, new_lambda;
     char shape_placed; //r - rectangle, c - circle
-    char placement_mode; //b - block, s - source, d - delete
+    char placement_mode; //b - block, s - source, d - delete, l - set lambda
 
 
 public:

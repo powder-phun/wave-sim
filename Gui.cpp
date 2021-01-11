@@ -4,7 +4,7 @@
 // Created by jan on 10.11.2020.
 //
 Gui::Gui():
-offset(0), running_status(false), current_point_chosen(0), shape_placed('r'), placement_mode('b')
+offset(0), running_status(false), current_point_chosen(0), shape_placed('r'), placement_mode('b'), new_lambda(20)
 {
     bool success = false;
     if (SDL_Init(SDL_INIT_VIDEO) == 0)
@@ -91,10 +91,8 @@ void Gui::refresh(Sim* sim)
                 current_point_chosen = 0;
             }
 
-            if(current_point_chosen >= 3 && placement_mode == 's')
+            if(current_point_chosen >= 2 && placement_mode == 's')
             {
-                int lambda = sqrt((new_x[2]-new_x[1])*(new_x[2]-new_x[1])+(new_y[2]-new_y[1])*(new_y[2]-new_y[1]));
-
                 if(shape_placed == 'r')
                 {
                     if(new_x[0] > new_x[1])
@@ -106,13 +104,14 @@ void Gui::refresh(Sim* sim)
                     {
                         std::swap(new_y[0], new_y[1]);
                     }
-                    sim->add_object(new Rect_object(new_x[0], new_y[0], new_x[1], new_y[1], 0.1, 1, sim->lambda_to_omega(lambda), 0));
+
+                    sim->add_object(new Rect_object(new_x[0], new_y[0], new_x[1], new_y[1], 0.1, 1, sim->lambda_to_omega(new_lambda), 0));
                 }
 
                 if(shape_placed == 'c')
                 {
                     int r = sqrt((new_x[0]-new_x[1])*(new_x[0]-new_x[1])+(new_y[0]-new_y[1])*(new_y[0]-new_y[1]));
-                    sim -> add_object(new Circle_object(new_x[0], new_y[0], r, 0.1, 1, sim->lambda_to_omega(lambda), 0));
+                    sim -> add_object(new Circle_object(new_x[0], new_y[0], r, 0.1, 1, sim->lambda_to_omega(new_lambda), 0));
                 }
 
                 current_point_chosen = 0;
@@ -121,6 +120,13 @@ void Gui::refresh(Sim* sim)
             if(current_point_chosen >= 1 && placement_mode == 'd')
             {
                 sim->remove_object_at(new_x[0], new_y[0]);
+                current_point_chosen = 0;
+            }
+
+            if(current_point_chosen >= 2 && placement_mode == 'l')
+            {
+                new_lambda = sqrt((new_x[0]-new_x[1])*(new_x[0]-new_x[1])+(new_y[0]-new_y[1])*(new_y[0]-new_y[1]));
+                printf("lambda: %d\n", new_lambda);
                 current_point_chosen = 0;
             }
         }
@@ -153,6 +159,11 @@ void Gui::refresh(Sim* sim)
             if(event.key.keysym.scancode == 76) //del
             {
                 placement_mode = 'd';
+            }
+
+            if(event.key.keysym.scancode == 15)
+            {
+                placement_mode = 'l';
             }
 
             current_point_chosen = 0;
