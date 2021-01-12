@@ -84,10 +84,8 @@ class Sim
     const double t_step;
     double max_amplitude;
     double max_energy;
-    double max0, max1;
-    int count;
     double laplacian_sum;
-    clock_t system_begin_time;
+    //clock_t system_begin_time;
     std::vector <Object*> objects = std::vector<Object*>();
 
     void laplace_avg();

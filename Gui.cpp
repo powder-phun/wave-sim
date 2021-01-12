@@ -40,7 +40,6 @@ void Gui::refresh(Sim* sim)
         }
     }
     offset++;
-    //printf("%i %f\n", offset, max_amplitude);
     std::vector <Object*> objects = sim->get_objects();
     for(int i = 0; i < objects.size(); i++)
     {
@@ -48,7 +47,6 @@ void Gui::refresh(Sim* sim)
     }
     SDL_RenderPresent(renderer);
     SDL_UpdateWindowSurface(window);
-    //SDL_Delay(1000);
 
     SDL_Event event;
 
@@ -126,7 +124,6 @@ void Gui::refresh(Sim* sim)
             if(current_point_chosen >= 2 && placement_mode == 'l')
             {
                 new_lambda = sqrt((new_x[0]-new_x[1])*(new_x[0]-new_x[1])+(new_y[0]-new_y[1])*(new_y[0]-new_y[1]));
-                printf("lambda: %d\n", new_lambda);
                 current_point_chosen = 0;
             }
         }
@@ -135,7 +132,6 @@ void Gui::refresh(Sim* sim)
 
         if(event.type == SDL_KEYDOWN)
         {
-            printf("%d\n", event.key.keysym.scancode);
             if(event.key.keysym.scancode == 21)
             {
                 shape_placed = 'r';

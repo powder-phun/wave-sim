@@ -6,7 +6,7 @@
 
 
 Sim::Sim():
-c(0.1), t_step(1.0), max_amplitude(0), max0(0), max1(0)
+c(0.1), t_step(1.0), max_amplitude(0)
 {
     reset_arrays();
     const clock_t begin_time = clock();
@@ -127,13 +127,6 @@ void Sim::tick()
         }
     }
     #endif
-    if(count%100 == 0)
-        //printf("%i, %f, %f\n",
-        //       count,
-        //       float( clock () - system_begin_time ) /  CLOCKS_PER_SEC,
-        //       count / (float( clock () - system_begin_time ) /  CLOCKS_PER_SEC));
-
-    count++;
 
     t+= t_step;
 }
@@ -277,10 +270,11 @@ void Sim::remove_object_at(int x, int y)
             delete(objects[i]);
             objects.erase(objects.begin() + i);
         }
-        else
-        {
-            objects[i]->impose(local_c, force_amplitude, force_omega, force_phase);
-        }
+    }
+
+    for(int i = 0; i < objects.size(); i++)
+    {
+        objects[i]->impose(local_c, force_amplitude, force_omega, force_phase);
     }
 }
 
